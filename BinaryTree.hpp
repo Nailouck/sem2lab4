@@ -48,6 +48,12 @@ private:
     void printNode(Node* node, int indent) const;
 
 
+    std::string serializeNode(Node* node) const;
+    static Node* parseNode(const std::string& s, size_t& pos);
+
+    bool isValidBST(Node* node, const int* minKey, const int* maxKey) const;
+
+
 
 public:
     BinaryTree();
@@ -75,16 +81,23 @@ public:
     bool containsSubtree(const BinaryTree<T>& sub) const;
     bool containsNode(const T& value) const;
 
+
     void balance();
     int GetDepth() const;
 
-    BinaryTree<T>& operator=(const BinaryTree<T>& other);
-
     void PrintTree() const;
 
+    BinaryTree<T>& operator=(const BinaryTree<T>& other);
     bool operator==(const BinaryTree<T>& other) const;
     bool operator!=(const BinaryTree<T>& other) const;
 
+
+    std::string toString() const;
+    static BinaryTree<T> fromString(const std::string& str);
+    bool isValidTreeString(const std::string& s);
+
+    T* findByPath(const std::string& path) const;
+    T* findByRelativePath(const std::string& path, const T& from) const;
 };
 
 
@@ -212,7 +225,7 @@ bool BinaryTree<T>::remove(int key) {
 template<typename T>
 void BinaryTree<T>::traverse(Node* node, const std::string& order, std::function<void(const T&)> func) const {
     if (!node) return;
-    if (order == "KLP")      { func(node->value); traverse(node->left, order, func); traverse(node->right, order, func); }
+    if (order == "KLP") { func(node->value); traverse(node->left, order, func); traverse(node->right, order, func); }
     else if (order == "KPL") { func(node->value); traverse(node->right, order, func); traverse(node->left, order, func); }
     else if (order == "LPK") { traverse(node->left, order, func); traverse(node->right, order, func); func(node->value); }
     else if (order == "LKP") { traverse(node->left, order, func); func(node->value); traverse(node->right, order, func); }
@@ -264,10 +277,10 @@ BinaryTree<T> BinaryTree<T>::merge(const BinaryTree<T>& other) const {
     traverse([&result](int key, const T& val) {
         result.insert(key, val);
         });
-    other.traverse([&result](int key, const T& val) { 
+    other.traverse([&result](int key, const T& val) {
         result.insert(key, val);
         });
-    result.balance(); 
+    result.balance();
     return result;
 }
 
@@ -323,30 +336,162 @@ typename BinaryTree<T>::Node* BinaryTree<T>::find(Node* node, const T& value) co
     return find(node->right, value);
 }
 
+
+template<typename T>
+std::string BinaryTree<T>::toString() const {
+    return serializeNode(root);
+}
+
+template<typename T>
+std::string BinaryTree<T>::serializeNode(Node* node) const {
+    if (!node) return "()"; 
+
+    std::ostringstream out;
+    out << "("; 
+    out << serializeNode(node->left); 
+
+    out << node->key << ":";
+    if constexpr (std::is_same_v<T, std::function<double(double)>>) {
+        out << "<function>";
+    }
+    else {
+        out << node->value;
+    }
+
+    out << serializeNode(node->right);
+    out << ")";
+
+    return out.str();
+}
+
+template<typename T>
+bool BinaryTree<T>::isValidTreeString(const std::string& s) {
+    size_t pos = 0;
+    try {
+        Node* node = parseNode(s, pos);
+        if (pos != s.size()) throw Errors::ParseError();
+
+        bool valid = isValidBST(node, nullptr, nullptr);
+        destroy(node);
+
+        return valid;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+template<typename T>
+bool BinaryTree<T>::isValidBST(Node* node, const int* minKey, const int* maxKey) const {
+    if (!node) return true;
+
+    if ((minKey && node->key <= *minKey) || (maxKey && node->key >= *maxKey))
+        return false;
+
+    return isValidBST(node->left, minKey, &node->key) && isValidBST(node->right, &node->key, maxKey);
+}
+
+
+
+template<typename T>
+BinaryTree<T> BinaryTree<T>::fromString(const std::string& str) {
+    size_t pos = 0;
+    BinaryTree<T> tree;
+
+    if (!tree.isValidTreeString(str)) {
+        throw Errors::ParseError("Invalid tree string: structure or BST property violated.");
+    }
+
+    tree.root = tree.parseNode(str, pos);
+    return tree;
+}
+
+
+template<typename T>
+typename BinaryTree<T>::Node* BinaryTree<T>::parseNode(const std::string& s, size_t& pos) {
+    if (pos >= s.size() || s[pos] != '(') throw Errors::ParseError();
+    ++pos;
+
+    if (s[pos] == ')') { ++pos; return nullptr; }
+
+    Node* left = parseNode(s, pos);
+
+    std::string key_str;
+    while (pos < s.size() && std::isdigit(s[pos]))
+        key_str += s[pos++];
+    if (key_str.empty() || s[pos++] != ':')
+        throw Errors::ParseError();
+    int key = std::stoi(key_str);
+
+    std::string val_str;
+    while (pos < s.size() && s[pos] != '(' && s[pos] != ')')
+        val_str += s[pos++];
+    std::istringstream vs(val_str);
+    T value;
+    vs >> value;
+
+    Node* right = parseNode(s, pos);
+
+    if (pos >= s.size() || s[pos] != ')') throw Errors::ParseError();
+    ++pos;
+
+    Node* node = new Node(key, value);
+    node->left = left;
+    node->right = right;
+    return node;
+}
+
+
+
+template<typename T>
+T* BinaryTree<T>::findByPath(const std::string& path) const {
+    Node* node = root;
+    for (char c : path) {
+        if (!node) return nullptr;
+        if (c == 'L') node = node->left;
+        else if (c == 'P') node = node->right;
+        else throw Errors::InvalidPath();
+    }
+    return node ? &node->value : nullptr;
+}
+
+template<typename T>
+T* BinaryTree<T>::findByRelativePath(const std::string& path, const T& from) const {
+    Node* node = find(root, from);
+    if (!node) return nullptr;
+    for (char c : path) {
+        if (!node) return nullptr;
+        if (c == 'L') node = node->left;
+        else if (c == 'P') node = node->right;
+        else throw Errors::InvalidPath();
+    }
+    return node ? &node->value : nullptr;
+}
+
 template<typename T>
 typename BinaryTree<T>::Node* BinaryTree<T>::buildBalancedTree(const std::vector<std::pair<int, T>>& nodes, int start, int end) {
     if (start > end) return nullptr;
     int mid = (start + end) / 2;
     Node* node = new Node(nodes[mid].first, nodes[mid].second);
     node->left = buildBalancedTree(nodes, start, mid - 1);
-    node->right = buildBalancedTree(nodes, mid + 1, end); 
-    return node; 
+    node->right = buildBalancedTree(nodes, mid + 1, end);
+    return node;
 }
 
 template<typename T>
 void BinaryTree<T>::inOrderCollect(Node* node, std::vector<std::pair<int, T>>& out) const {
     if (!node) return;
     inOrderCollect(node->left, out);
-    out.push_back({ node->key, node->value }); 
+    out.push_back({ node->key, node->value });
     inOrderCollect(node->right, out);
 }
 
 template<typename T>
 void BinaryTree<T>::balance() {
     std::vector<std::pair<int, T>> nodes;
-    inOrderCollect(root, nodes); 
-    destroy(root); 
-    root = buildBalancedTree(nodes, 0, nodes.size() - 1); 
+    inOrderCollect(root, nodes);
+    destroy(root);
+    root = buildBalancedTree(nodes, 0, nodes.size() - 1);
 }
 
 template<typename T>

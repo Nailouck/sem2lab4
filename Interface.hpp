@@ -117,7 +117,7 @@ public:
             std::cout << "\n--- Tree Menu (" << typeName << ") ---\n"
                 << "1. Insert\n2. Search\n3. Min\n4. Max\n5. Remove\n"
                 << "6. Traverse (KLP)\n7. Merge with another\n8. Extract Subtree\n"
-                << "9. Balance Tree\n10. Print tree\n11. Back\n"
+                << "9. Balance Tree\n10. Print tree\n11. Serialize\n12. Back\n"
                 << "Choose: ";
             try {
                 int ch = GetInt();
@@ -134,7 +134,7 @@ public:
                     tree.insert(key, val);
                     break;
                 }
-                case 2: {
+                case 2: { 
                     int key = GetInt("Key: ");
                     T* found = tree.search(key);
                     if (found) {
@@ -145,24 +145,24 @@ public:
                     else std::cout << "Not found\n";
                     break;
                 }
-                case 3: {
+                case 3: { 
                     if constexpr (std::is_same_v<T, std::function<double(double)>>)
                         std::cout << "Min: f(1.0) = " << tree.getMin()(1.0) << "\n";
                     else std::cout << "Min: " << tree.getMin() << "\n";
                     break;
                 }
-                case 4: {
+                case 4: { 
                     if constexpr (std::is_same_v<T, std::function<double(double)>>)
                         std::cout << "Max: f(1.0) = " << tree.getMax()(1.0) << "\n";
                     else std::cout << "Max: " << tree.getMax() << "\n";
                     break;
                 }
-                case 5: {
+                case 5: { 
                     int key = GetInt("Key: ");
                     std::cout << (tree.remove(key) ? "Removed.\n" : "Key not found.\n");
                     break;
                 }
-                case 6: {
+                case 6: { 
                     std::cout << "KLP traversal:\n";
                     if constexpr (std::is_same_v<T, std::function<double(double)>>)
                         tree.traverseKLP([](const T& f) { std::cout << "f(1.0)=" << f(1.0) << " "; });
@@ -170,7 +170,7 @@ public:
                     std::cout << "\n";
                     break;
                 }
-                case 7: {
+                case 7: { 
                     std::cout << "Available tree indices: ";
                     for (size_t i = 0; i < globalTrees.size(); ++i)
                         std::cout << i << " ";
@@ -186,7 +186,7 @@ public:
                     std::cout << "Merged tree added as index " << globalTrees.size() - 1 << "\n";
                     break;
                 }
-                case 8: {
+                case 8: { 
                     int key = GetInt("Key for subtree root: ");
                     auto* subtree = new TreeWrapper<T>("subtree_" + typeName);
                     subtree->tree = this->tree.extractSubtree(key);
@@ -200,13 +200,23 @@ public:
                     std::cout << "Tree balanced.\n";
                     break;
                 }
-                case 10: {
+                case 10: { 
                     if constexpr (std::is_same_v<T, std::function<double(double)>>)
                         tree.traverseKLP([](const T& f) { std::cout << "f(1.0)=" << f(1.0) << " "; });
                     else { tree.PrintTree(); }
                     break;
                 }
-                case 11: return;
+                case 11: { 
+                    try {
+                        std::string serialized = tree.toString();
+                        std::cout << "Serialized tree: " << serialized << "\n";
+                    }
+                    catch (const std::exception& e) {
+                        std::cout << "Serialization error: " << e.what() << "\n";
+                    }
+                    break;
+                }
+                case 12: return;
 
                 default: std::cout << "Invalid option.\n";
                 }
@@ -221,7 +231,7 @@ public:
 void ShowTypeMenu() {
     std::cout << "Choose data type:\n"
         << "1. int\n2. double\n3. string\n4. complex\n"
-        << "5. function<double(double)>\n6. Student\n7. Professor\nChoice: ";
+        << "5. function<double(double)>\n6. student\n7. professor\nChoice: ";
 }
 
 void Run() {
@@ -230,11 +240,11 @@ void Run() {
 
     while (true) {
         std::cout << "\n=== Main Menu ===\n"
-            << "1. Add Tree\n2. List Trees\n3. Work With Tree\n4. Delete Tree\n5. Random tree\n6. Exit\nChoose: ";
+            << "1. Add Tree\n2. List Trees\n3. Work With Tree\n4. Delete Tree\n5. Random tree\n6. String to tree\n7. Exit\nChoose: ";
         try {
             int ch = GetInt();
             switch (ch) {
-            case 1: {
+            case 1: { 
                 ShowTypeMenu();
                 int t = GetInt();
                 switch (t) {
@@ -251,7 +261,7 @@ void Run() {
                 std::cout << "Tree created. Index: " << trees.size() - 1 << "\n";
                 break;
             }
-            case 2: {
+            case 2: { 
                 if (trees.empty()) {
                     std::cout << "No trees yet.\n";
                     break;
@@ -303,6 +313,78 @@ void Run() {
                 break;
             }
             case 6: {
+                ShowTypeMenu();
+                int t = GetInt("Choose tree type: ");
+                std::cout << "Enter serialized tree (format: (()key:value())): ";
+                std::cin.ignore();
+                std::string input;
+                std::getline(std::cin, input);
+
+                try {
+                    switch (t) {
+                    case 1: {
+                        auto tree = BinaryTree<int>::fromString(input);
+                        auto* wrapper = new TreeWrapper<int>("int");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("int");
+                        break;
+                    }
+                    case 2: {
+                        auto tree = BinaryTree<double>::fromString(input);
+                        auto* wrapper = new TreeWrapper<double>("double");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("double");
+                        break;
+                    }
+                    case 3: {
+                        auto tree = BinaryTree<std::string>::fromString(input);
+                        auto* wrapper = new TreeWrapper<std::string>("string");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("string");
+                        break;
+                    }
+                    case 4: {
+                        auto tree = BinaryTree<std::complex<double>>::fromString(input);
+                        auto* wrapper = new TreeWrapper<std::complex<double>>("complex");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("complex");
+                        break;
+                    }
+                    case 5: {
+                        std::cout << "Deserialization of function trees is not supported.\n";
+                        break;
+                    }
+                    case 6: {
+                        auto tree = BinaryTree<Student>::fromString(input);
+                        auto* wrapper = new TreeWrapper<Student>("Student");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("Student");
+                        break;
+                    }
+                    case 7: {
+                        auto tree = BinaryTree<Professor>::fromString(input);
+                        auto* wrapper = new TreeWrapper<Professor>("Teacher");
+                        wrapper->tree = std::move(tree);
+                        trees.push_back(wrapper);
+                        treeTypes.push_back("Teacher");
+                        break;
+                    }
+                    default:
+                        throw Errors::InvalidArgument("Unknown data type");
+                    }
+                    std::cout << "Tree successfully deserialized. Index: " << trees.size() - 1 << "\n";
+                }
+                catch (const std::exception& e) {
+                    std::cout << "Deserialization error: " << e.what() << "\n";
+                }
+                break;
+            }
+            case 7: {
                 for (auto* ptr : trees) delete ptr;
                 std::cout << "Exiting...\n";
                 return;

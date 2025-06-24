@@ -33,7 +33,7 @@ std::vector<Error> ErrorsList = {
     {6, "Index out of range"},
     {7, "Invalid argument"},
     {8, "Cannot merge trees of different types"},
-    {9, "Parse error. Format is incorrect(correct format: (())key:value(())"}
+    {9, "Parse error. Format is incorrect (correct format: ((()key:value())key:value(()key:value())) )"}
 };
 
 namespace Errors {
