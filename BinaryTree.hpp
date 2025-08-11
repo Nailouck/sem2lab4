@@ -98,6 +98,8 @@ public:
 
     T* findByPath(const std::string& path) const;
     T* findByRelativePath(const std::string& path, const T& from) const;
+
+    BinaryTree<T> recovery(string KLP, string LKP);
 };
 
 
@@ -517,7 +519,7 @@ void BinaryTree<T>::printNode(Node* node, int indent) const {
 
         if (indent) std::cout << std::setw(indent) << ' ';
 
-        std::cout << node->key << ": ";
+        //std::cout << node->key << ": ";
 
         if constexpr (std::is_same_v<T, std::function<double(double)>>) {
             std::cout << "<function>" << std::endl;
@@ -550,3 +552,23 @@ BinaryTree<T>& BinaryTree<T>::operator=(const BinaryTree<T>& other) {
     }
     return *this;
 }
+
+
+template<typename T>
+BinaryTree<T> recovery(std::string KLP, std::string LKP) {
+
+    std::string root;
+    int pos = 0;
+
+    while (pos < KLP.size() && std::isdigit(KLP[pos]))
+        root += KLP[pos++];
+    if (root.empty())
+        throw Errors::ParseError();
+    int value = std::stoi(root);
+
+    std::string left;
+    std::string right;
+
+    LKP.find(root)
+}
+

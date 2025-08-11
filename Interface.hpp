@@ -231,7 +231,7 @@ public:
 void ShowTypeMenu() {
     std::cout << "Choose data type:\n"
         << "1. int\n2. double\n3. string\n4. complex\n"
-        << "5. function<double(double)>\n6. student\n7. professor\nChoice: ";
+        << "5. student\n6. professor\nChoice: ";
 }
 
 void Run() {
@@ -252,9 +252,9 @@ void Run() {
                 case 2: trees.push_back(new TreeWrapper<double>("double")); break;
                 case 3: trees.push_back(new TreeWrapper<std::string>("string")); break;
                 case 4: trees.push_back(new TreeWrapper<std::complex<double>>("complex")); break;
-                case 5: trees.push_back(new TreeWrapper<std::function<double(double)>>("function")); break;
-                case 6: trees.push_back(new TreeWrapper<Student>("Student")); break;
-                case 7: trees.push_back(new TreeWrapper<Professor>("Professor")); break;
+                //case 5: trees.push_back(new TreeWrapper<std::function<double(double)>>("function")); break;
+                case 5: trees.push_back(new TreeWrapper<Student>("Student")); break;
+                case 6: trees.push_back(new TreeWrapper<Professor>("Professor")); break;
                 default: throw Errors::InvalidArgument();
                 }
                 treeTypes.push_back(trees.back()->TypeName());

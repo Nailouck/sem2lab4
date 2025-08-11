@@ -3,9 +3,9 @@
 
 #define FILENAME "result.csv"
 
-#define STRESSTEST
-#define BASETEST
-#define DIFFTEST
+//#define STRESSTEST
+//#define BASETEST
+//#define DIFFTEST
 
 int main() {
 #ifdef STRESSTEST
