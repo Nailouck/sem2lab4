@@ -240,7 +240,7 @@ void Run() {
 
     while (true) {
         std::cout << "\n=== Main Menu ===\n"
-            << "1. Add Tree\n2. List Trees\n3. Work With Tree\n4. Delete Tree\n5. Random tree\n6. String to tree\n7. Exit\nChoose: ";
+            << "1. Add Tree\n2. List Trees\n3. Work With Tree\n4. Delete Tree\n5. Random tree\n6. String to tree\n7. Recovery tree by two traverses\n8. Exit\nChoose: ";
         try {
             int ch = GetInt();
             switch (ch) {
@@ -385,6 +385,29 @@ void Run() {
                 break;
             }
             case 7: {
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+                std::cout << "Enter KLP traverse (format: value value value): ";
+                std::string traverseKLP;
+                std::getline(std::cin, traverseKLP);
+
+                std::cout << "Enter LKP traverse (format: value value value): ";
+                std::string traverseLKP;
+                std::getline(std::cin, traverseLKP);
+
+                try {
+                    auto tree = BinaryTree<int>::recoveryTree(traverseKLP, traverseLKP);
+                    auto* wrapper = new TreeWrapper<int>("int");
+                    wrapper->tree = std::move(tree);
+                    trees.push_back(wrapper);
+                    treeTypes.push_back("int");
+                }
+                catch (const std::exception& e) {
+                    std::cout << "Error: " << e.what() << "\n";
+                }
+                break;
+            }
+            case 8: {
                 for (auto* ptr : trees) delete ptr;
                 std::cout << "Exiting...\n";
                 return;

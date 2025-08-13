@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "error.hpp"
 #include <iomanip>
+#include <vector>
 
 template<typename T>
 class BinaryTree {
@@ -99,7 +100,8 @@ public:
     T* findByPath(const std::string& path) const;
     T* findByRelativePath(const std::string& path, const T& from) const;
 
-    BinaryTree<T> recovery(string KLP, string LKP);
+    static typename BinaryTree<T>::Node* recovery(std::vector<T>& KLP, std::vector<T>& LKP);
+    static BinaryTree<T> recoveryTree(const std::string& KLP_str, const std::string& LKP_str);
 };
 
 
@@ -553,22 +555,103 @@ BinaryTree<T>& BinaryTree<T>::operator=(const BinaryTree<T>& other) {
     return *this;
 }
 
+template<typename T>
+std::vector<T> translate(const std::string& str) {
+    std::istringstream iss(str);
+    std::vector<T> res;
+    T num;
+
+    while (iss >> num) {
+        res.push_back(num);
+    }
+
+    if (!iss.eof()) {
+        throw Errors::ParseError("Invalid characters in input");
+    }
+
+    return res;
+}
 
 template<typename T>
-BinaryTree<T> recovery(std::string KLP, std::string LKP) {
+std::vector<T> subvector(const std::vector<T>& vec, size_t start, size_t end) {
+    if (start >= vec.size() || end >= vec.size() || start > end) {
+        return {};
+    }
 
-    std::string root;
-    int pos = 0;
+    std::vector<T> res;
 
-    while (pos < KLP.size() && std::isdigit(KLP[pos]))
-        root += KLP[pos++];
-    if (root.empty())
-        throw Errors::ParseError();
-    int value = std::stoi(root);
+    for (size_t i = start; i <= end; ++i) {
+        res.push_back(vec[i]);
+    }
+    return res;
+}
 
-    std::string left;
-    std::string right;
+template<typename T>
+size_t index(std::vector<T> vec, T value) {
 
-    LKP.find(root)
+    auto it = std::find(vec.begin(), vec.end(), value);
+
+    if (it == vec.end()) throw Errors::IndexOutOfRange();
+
+    return std::distance(vec.begin(), it);
+}
+
+template<typename T>
+typename BinaryTree<T>::Node* BinaryTree<T>::recovery(std::vector<T>& KLP, std::vector<T>& LKP) {
+
+    if (KLP.empty() || LKP.empty()) {
+        return nullptr;
+    }
+
+    T root_value = KLP[0];
+
+    size_t root_idx = index(LKP, root_value);
+
+    std::vector<T> left_LKP = subvector(LKP, 0, root_idx - 1);
+    std::vector<T> right_LKP = subvector(LKP, root_idx + 1, LKP.size() - 1);
+
+    std::vector<T> left_KLP = subvector(KLP, 1, root_idx);
+    std::vector<T> right_KLP = subvector(KLP, root_idx + 1, KLP.size() - 1);
+
+    typename BinaryTree<T>::Node* node = new typename BinaryTree<T>::Node(static_cast<int>(root_value), root_value);
+
+    node->left = recovery(left_KLP, left_LKP);
+    node->right = recovery(right_KLP, right_LKP);
+
+    return node;
+}
+
+template<typename T>
+BinaryTree<T> BinaryTree<T>::recoveryTree(const std::string& KLP_str, const std::string& LKP_str) {
+
+    std::vector<T> KLP = translate<T>(KLP_str);
+    std::vector<T> LKP = translate<T>(LKP_str);
+
+    if (KLP.size() != LKP.size()) {
+        throw Errors::InvalidArgument("Traversals have different lengths.");
+    }
+
+    std::vector<T> sortedKLP = KLP;
+    std::vector<T> sortedLKP = LKP;
+
+    std::sort(sortedKLP.begin(), sortedKLP.end());
+    std::sort(sortedLKP.begin(), sortedLKP.end());
+
+    if (sortedKLP != sortedLKP) {
+        throw Errors::InvalidArgument("Traversals of difirent trees.");
+    }
+
+    /*if (LKP[0] > KLP[0] || KLP[0] > LKP[index(LKP, KLP[0]) + 1]) {
+        throw Errors::InvalidArgument("Tree is not exist.");
+    }*/
+
+    BinaryTree<T> res;
+    res.root = recovery(KLP, LKP);
+
+    if (!res.isValidBST(res.root, nullptr, nullptr)) {
+        throw Errors::InvalidArgument("Invalid traversals.");
+    }
+
+    return res;
 }
 
